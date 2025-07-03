@@ -1,94 +1,95 @@
-name: CI/CD Pipeline for SOA WebLogic Deployment
+name: MavenBuildAndDeploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
-      - 'soa/**'
+    - 'soa/**'
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
     paths:
-      - 'soa/**'
-
+    - 'soa/**'
 jobs:
-  detect-changes:
-    runs-on: [self-hosted, linux]
-    outputs:
-      apps: ${{ steps.set-vars.outputs.apps }}
+  build-test-scan:
+    runs-on: self-hosted
+
+   
     steps:
-      - name: Checkout full history
+      - name: Checkout code
         uses: actions/checkout@v3
+
+     
+      - name: Check Java installation
+        run: |
+          
+          echo "Java Version:"
+          java -version
+          echo "Maven Version:"
+          mvn --version
+          echo "Runner workspace root: $GITHUB_WORKSPACE"
+          echo "Current directory: $(pwd)"
+          #echo "Workspace contents:"
+          #ls -R $GITHUB_WORKSPACE
+          
+          
+
+
+     
+
+      - name: Build with Maven
+        #shell: cmd
+        env:   
+          MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
+        run: mvn -B clean package
+       
+        continue-on-error: false
+      - name: Setup WebLogic environment
+        
+        run: |
+          echo "Setting up WebLogic environment variables"
+          echo "$WL_HOME"
+          echo "$ORACLE_HOME"
+          echo "$WL_HOME/server/bin"
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          fetch-depth: 0
+          python-version: '3.9'  # Specify your required Python version
 
-      - name: Detect Changed SOA Apps
-        id: set-vars
-        run: |
-          echo "Detecting changed SOA apps between ${{ github.event.before }} and ${{ github.sha }}"
-
-          apps=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^soa/' \
-            | cut -d'/' -f2 \
-            | sort -u \
-            | jq -R . | jq -s -c .)
-
-          echo "Detected changed SOA apps: $apps"
-
-          echo "apps=$apps" >> $GITHUB_OUTPUT
-
-  build:
-    needs: detect-changes
-    runs-on: [self-hosted, linux]
-    if: ${{ needs.detect-changes.outputs.apps != '[]' }}
-    strategy:
-      matrix:
-        app: ${{ fromJson(needs.detect-changes.outputs.apps) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Build WAR for ${{ matrix.app }}
-        run: |
-          cd SOA/${{ matrix.app }}
-          mvn clean package -DskipTests
-
-  sonar-analysis:
-    needs: build
-    runs-on: [self-hosted, linux]
-    strategy:
-      matrix:
-        app: ${{ fromJson(needs.detect-changes.outputs.apps) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: SonarQube Analysis - ${{ matrix.app }}
+      - name: Deploy to WebLogic
+        shell: powershell
         env:
-          SONAR_HOST_URL: http://34.93.93.9:9000
-          SONAR_TOKEN: sqa_05dff30184c6e2f5bf6d0bc2d56bfb30d9d9fe4e
+          WEBLOGIC_USERNAME: ${{ secrets.WEBLOGIC_USERNAME }}
+          WEBLOGIC_PASSWORD: ${{ secrets.WEBLOGIC_PASSWORD }}
+          WEBLOGIC_ADMIN_URL: ${{ secrets.WEBLOGIC_ADMIN_URL }}
+          WEBLOGIC_TARGET_SERVER: ${{ secrets.WEBLOGIC_TARGET_SERVER }}
+          JAR_PATH: target/sca_helloword_rev1.0-SNAPSHOT.jar
+          #DEPLOY_SCRIPT: ${{ env.PROD_DEPLOY }}
         run: |
-          cd SOA/${{ matrix.app }}
-          source ~/.bashrc
-          sonar-scanner \
-            -Dsonar.projectKey=${{ matrix.app }} \
-            -Dsonar.host.url=$SONAR_HOST_URL \
-            -Dsonar.token=$SONAR_TOKEN \
-            -Dsonar.sources=. \
-            -Dsonar.java.binaries=target/classes
 
-  deploy:
-    needs: sonar-analysis
-    runs-on: [self-hosted, linux]
-    strategy:
-      matrix:
-        app: ${{ fromJson(needs.detect-changes.outputs.apps) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Deploy WAR to WebLogic - ${{ matrix.app }}
-        run: |
-          chmod +x ./deploy_to_weblogic.sh
-          ./deploy_to_weblogic.sh "SOA/${{ matrix.app }}"
+          # Verify the script exists
+          #if (-not (Test-Path $env:DEPLOY_SCRIPT)) {
+          #  Write-Error "Deployment script not found at: $env:DEPLOY_SCRIPT"
+          #  exit 1
+          #}
+          
+          Write-Output "Starting deployment to WebLogic..."
+          
+          # Verify Python installation
+          python --version
+          
+          # Execute the deployment script
+          
+            #python "$env:DEPLOY_SCRIPT" `
+            C:\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.cmd E:\Raki\NZ\Github\runnersetup\DeployEnv\weblogicdeploy.py `
+            --username "$env:WEBLOGIC_USERNAME" `
+            --password "$env:WEBLOGIC_PASSWORD" `
+            --admin_url "$env:WEBLOGIC_ADMIN_URL" `
+            --target_server "$env:WEBLOGIC_TARGET_SERVER" `
+            --jar_path "$env:JAR_PATH"
+          
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Deployment failed with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+          }
