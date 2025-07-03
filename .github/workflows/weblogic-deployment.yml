@@ -1,5 +1,4 @@
 name: Dynamic SOA WebLogic Deployment
-
 on:
   push:
     branches: [main]
