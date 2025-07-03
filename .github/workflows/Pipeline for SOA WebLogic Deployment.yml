@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-    - 'monorepo/soa/**'
+    - 'monorepo/soa/helloword/**'
   pull_request:
     branches: [ main ]
     paths:
-    - 'monorepo/soa/**'
+    - 'monorepo/soa/helloword/**'
 jobs:
   build-test-scan:
     runs-on: self-hosted
