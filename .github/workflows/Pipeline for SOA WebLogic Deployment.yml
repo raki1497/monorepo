@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-    - 'soa/**'
+    - 'monorepo/soa/**'
   pull_request:
     branches: [ main ]
     paths:
-    - 'soa/**'
+    - 'monorepo/soa/**'
 jobs:
   build-test-scan:
     runs-on: self-hosted
@@ -17,7 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+        with:
+          path: 'monorepo'  # Explicitly checkout to monorepo directory
      
       - name: Check Java installation
         run: |
@@ -37,6 +38,7 @@ jobs:
      
 
       - name: Build with Maven
+        working-directory: monorepo/soa/**
         #shell: cmd
         env:   
           MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
