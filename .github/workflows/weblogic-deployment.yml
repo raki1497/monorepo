@@ -2,101 +2,69 @@ name: MavenBuildAndDeploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'soa/**'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'soa/**'
 
 jobs:
   build-test-scan:
     runs-on: self-hosted
-
-   
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-     
       - name: Check Java installation
         run: |
-          
           echo "Java Version:"
           java -version
           echo "Maven Version:"
           mvn --version
           echo "Runner workspace root: $GITHUB_WORKSPACE"
           echo "Current directory: $(pwd)"
-          #echo "Workspace contents:"
-          #ls -R $GITHUB_WORKSPACE
-          
-          
-      - name: Verify directory structure
-        run: |
           echo "Workspace contents:"
           ls -R
+
+      - name: Verify project structure
+        run: |
           echo "Checking SOA projects exist:"
-          ls -l soa/${{ matrix.project }}/pom.
+          ls -l soa/helloword/pom.xml
+          ls -l soa/oracle-soa-project/pom.xml
 
-     
-
-      - name: Build with Maven
-        #shell: cmd
-        working-directory: soa/${{ matrix.project }}
+      - name: Build helloword project
+        working-directory: soa/helloword
         env:   
           MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
         run: mvn -B clean package
-       
-        continue-on-error: false
+
+      - name: Build oracle-soa-project
+        working-directory: soa/oracle-soa-project
+        env:   
+          MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
+        run: mvn -B clean package
+
       - name: Setup WebLogic environment
-        
         run: |
           echo "Setting up WebLogic environment variables"
-          echo "$WL_HOME"
-          echo "$ORACLE_HOME"
-          echo "$WL_HOME/server/bin"
-      
+          echo "WL_HOME: $WL_HOME"
+          echo "ORACLE_HOME: $ORACLE_HOME"
+          echo "PATH: $PATH"
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Specify your required Python version
+          python-version: '3.9'
 
-      - name: Deploy to WebLogic
+      - name: Deploy helloword to WebLogic
         shell: powershell
+        working-directory: soa/helloword
         env:
           WEBLOGIC_USERNAME: ${{ secrets.WEBLOGIC_USERNAME }}
           WEBLOGIC_PASSWORD: ${{ secrets.WEBLOGIC_PASSWORD }}
           WEBLOGIC_ADMIN_URL: ${{ secrets.WEBLOGIC_ADMIN_URL }}
           WEBLOGIC_TARGET_SERVER: ${{ secrets.WEBLOGIC_TARGET_SERVER }}
-          JAR_PATH: target/sca_helloword_rev1.0-SNAPSHOT.jar
-          #DEPLOY_SCRIPT: ${{ env.PROD_DEPLOY }}
-        run: |
-
-
-          # Verify the script exists
-          #if (-not (Test-Path $env:DEPLOY_SCRIPT)) {
-          #  Write-Error "Deployment script not found at: $env:DEPLOY_SCRIPT"
-          #  exit 1
-          #}
-          
-          Write-Output "Starting deployment to WebLogic..."
-          
-          # Verify Python installation
-          python --version
-          
-          # Execute the deployment script
-          
-            #python "$env:DEPLOY_SCRIPT" `
-            C:\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.cmd E:\Raki\NZ\Github\runnersetup\DeployEnv\weblogicdeploy.py `
-            --username "$env:WEBLOGIC_USERNAME" `
-            --password "$env:WEBLOGIC_PASSWORD" `
-            --admin_url "$env:WEBLOGIC_ADMIN_URL" `
-            --target_server "$env:WEBLOGIC_TARGET_SERVER" `
-            --jar_path "$env:JAR_PATH"
-          
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "Deployment failed with exit code $LASTEXITCODE"
-              exit $LASTEXITCODE
-          }
+          JAR_PATH: target/sca_helloword_r
