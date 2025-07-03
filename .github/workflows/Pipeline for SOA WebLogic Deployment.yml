@@ -29,7 +29,7 @@ jobs:
           echo "Detecting changed SOA apps between ${{ github.event.before }} and ${{ github.sha }}"
 
           apps=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
-            | grep '^SOA/' \
+            | grep '^soa/' \
             | cut -d'/' -f2 \
             | sort -u \
             | jq -R . | jq -s -c .)
