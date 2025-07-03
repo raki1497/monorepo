@@ -4,7 +4,7 @@
     <groupId>com.raki.soa</groupId>
     <artifactId>helloword</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>sar</packaging>
+    <packaging>sar</packaging> 
     
     <!--
            This POM was generated from the SOA Maven Archetype.
