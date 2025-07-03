@@ -33,7 +33,12 @@ jobs:
           #ls -R $GITHUB_WORKSPACE
           
           
-
+      - name: Verify directory structure
+        run: |
+          echo "Workspace contents:"
+          ls -R
+          echo "Checking SOA projects exist:"
+          ls -l soa/${{ matrix.project }}/pom.
 
      
 
