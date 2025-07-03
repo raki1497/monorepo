@@ -12,7 +12,7 @@ on:
 
 jobs:
   discover-projects:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       projects: ${{ steps.find-projects.outputs.projects }}
     steps:
