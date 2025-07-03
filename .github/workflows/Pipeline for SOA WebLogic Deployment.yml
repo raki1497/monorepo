@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths:
-    - 'soa/helloword/**'
+    - '../../soa/helloword/**'
   pull_request:
     branches: [ main ]
     paths:
-    - 'soa/helloword/**'
+    - '../../soa/helloword/**'
 jobs:
   build-test-scan:
     runs-on: self-hosted
