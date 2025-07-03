@@ -39,8 +39,7 @@ jobs:
 
       - name: Build with Maven
         #shell: cmd
-        paths:
-      - 'soa/**'
+        working-directory: soa/${{ matrix.project }}
         env:   
           MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
         run: mvn -B clean package
