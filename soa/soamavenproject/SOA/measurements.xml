@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <ns0:measurements xmlns:ns0="http://xmlns.oracle.com/bpm/analytics/measurementV20">
-   <ns0:compositeDN>oracle-soa-project</ns0:compositeDN>
+   <ns0:compositeDN>soamavenproject</ns0:compositeDN>
    <ns0:measurementElements>
       <ns0:measurementElement name="Composite_Measurement" type="COMPOSITE" enabled="true" userDefined="false">
          <ns0:elementSelection>

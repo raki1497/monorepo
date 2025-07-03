@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.oracle.soa.archetype</groupId>
-    <artifactId>oracle-soa-project</artifactId>
+    <groupId>com.soa</groupId>
+    <artifactId>soamavenproject</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>sar</packaging>
     
@@ -55,10 +55,7 @@
         <!--<jndi.properties.input>${basedir}/jndi.properties</jndi.properties.input>-->
         <scatest.result>${scac.output.dir}/testResult</scatest.result>
         <!--  input is the name of the composite to run test suties against -->
-	<input>oracle-soa-project</input>
-        <oracleHome>
-            ${env.ORACLE_HOME}
-        </oracleHome>
+	<input>soamavenproject</input>
     </properties>
 
     <!--
@@ -66,24 +63,16 @@
            any changes beflow this point - these just point to the properties above.
     -->
     <build>
-	
-	
-	
-	
-	
-	
         <plugins>
             <plugin>
                 <groupId>com.oracle.soa.plugin</groupId>
                 <artifactId>oracle-soa-plugin</artifactId>
                 <version>12.2.1-3-0</version>
                 <configuration>
-				
-                    <compositeName>oracle-soa-project</compositeName>
+                    <compositeName>soamavenproject</compositeName>
                     <composite>${scac.input}</composite>
                     <sarLocation>${scac.output.dir}/sca_${project.artifactId}_rev${project.version}.jar</sarLocation>
                     <serverUrl>${serverUrl}</serverUrl>
-					
                     <!-- note: compositeRevision is needed to package, revision is needed to undeploy -->
                     <compositeRevision>${composite.revision}</compositeRevision>
                     <revision>${composite.revision}</revision>
@@ -113,75 +102,6 @@
                 <!-- extensions=true is needed to use the custom sar packaging type -->
                 <extensions>true</extensions>
             </plugin>
-			
-			
-			
-			
-		
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <version>3.6.0</version>
-            <executions>
-                <execution>
-                    <id>copy-dependencies</id>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>copy-dependencies</goal>
-                    </goals>
-                    <configuration>
-                        <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        <includeScope>runtime</includeScope>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-   
-			
-			
-			
-			
-			
-            <plugin>
-                <groupId>com.oracle.adf.plugin</groupId>
-                <artifactId>ojdeploy</artifactId>
-                <version>12.2.1-3-0</version>
-                <configuration>
-                    <ojdeploy>
-                        ${oracleHome}/jdeveloper/jdev/bin/ojdeploy.exe
-                    </ojdeploy>
-                    <workspace>
-                        ${basedir}/../UpOsbApp.jws
-                    </workspace>
-                    <project>
-                        oracle-soa-project
-                    </project>
-                    <profile>
-                        oracle-soa-project
-                    </profile>
-                    <outputfile>
-                        ${project.build.directory}/${project.build.finalName}.jar
-                    </outputfile>
-                </configuration>
-              <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>deploy</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 </project>

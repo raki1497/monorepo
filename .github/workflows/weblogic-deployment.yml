@@ -15,7 +15,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        project: ['helloword']  # Define your projects here
+        project: ['soamavenproject']  # Define your projects here
    
     steps:
       - name: Checkout code
