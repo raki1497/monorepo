@@ -1,97 +1,101 @@
-name: MavenBuildAndDeploy
+name: Dynamic SOA WebLogic Deployment
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-    - '../../soa/**'
+      - 'monorepo/soa/**'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-    - '../../soa/**'
-jobs:
-  build-test-scan:
-    runs-on: self-hosted
+      - 'monorepo/soa/**'
 
-   
+jobs:
+  discover-projects:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.find-projects.outputs.projects }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          path: 'monorepo'  # Explicitly checkout to monorepo directory
-     
-      - name: Check Java installation
+        uses: actions/checkout@v4
+        
+      - name: Find SOA projects
+        id: find-projects
         run: |
-          
-          echo "Java Version:"
-          java -version
-          echo "Maven Version:"
-          mvn --version
-          echo "Runner workspace root: $GITHUB_WORKSPACE"
-          echo "Current directory: $(pwd)"
-          #echo "Workspace contents:"
-          #ls -R $GITHUB_WORKSPACE
-          
-          
+          cd monorepo/soa
+          # Find all directories containing pom.xml
+          projects=$(find . -name 'pom.xml' -printf '%h\n' | sed 's/^\.\///' | sort | uniq)
+          # Convert to JSON array
+          projects_json=$(echo "$projects" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "Discovered projects: $projects_json"
+          echo "projects=$projects_json" >> $GITHUB_OUTPUT
 
+  build-and-deploy:
+    needs: discover-projects
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        project: ${{ fromJson(needs.discover-projects.outputs.projects) }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: 'monorepo'
 
-     
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Build with Maven
-        working-directory: monorepo/soa/**
-        #shell: cmd
-        env:   
+      - name: Build ${{ matrix.project }}
+        working-directory: monorepo/soa/${{ matrix.project }}
+        env:
           MAVEN_OPTS: "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
         run: mvn -B clean package
-       
-        continue-on-error: false
-      - name: Setup WebLogic environment
-        
+
+      - name: Verify WebLogic Environment
         run: |
-          echo "Setting up WebLogic environment variables"
-          echo "$WL_HOME"
-          echo "$ORACLE_HOME"
-          echo "$WL_HOME/server/bin"
-      
-      - name: Setup Python
+          echo "Checking WebLogic environment..."
+          echo "WL_HOME: $WL_HOME"
+          echo "ORACLE_HOME: $ORACLE_HOME"
+          if [ ! -d "$WL_HOME" ]; then
+            echo "Error: WebLogic home directory not found"
+            exit 1
+          fi
+
+      - name: Setup Python for WLST
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Specify your required Python version
+          python-version: '3.9'
 
-      - name: Deploy to WebLogic
+      - name: Deploy ${{ matrix.project }} to WebLogic
         shell: powershell
+        working-directory: monorepo/soa/${{ matrix.project }}
         env:
           WEBLOGIC_USERNAME: ${{ secrets.WEBLOGIC_USERNAME }}
           WEBLOGIC_PASSWORD: ${{ secrets.WEBLOGIC_PASSWORD }}
           WEBLOGIC_ADMIN_URL: ${{ secrets.WEBLOGIC_ADMIN_URL }}
           WEBLOGIC_TARGET_SERVER: ${{ secrets.WEBLOGIC_TARGET_SERVER }}
-          JAR_PATH: target/sca_helloword_rev1.0-SNAPSHOT.jar
-          #DEPLOY_SCRIPT: ${{ env.PROD_DEPLOY }}
+          JAR_PATH: target/*.jar  # Will pick up whatever jar is built
         run: |
+          # Find the built jar file
+          $jarFile = (Get-Item $env:JAR_PATH).FullName
+          if (-not (Test-Path $jarFile)) {
+              Write-Error "Deployment artifact not found: $jarFile"
+              exit 1
+          }
 
-
-          # Verify the script exists
-          #if (-not (Test-Path $env:DEPLOY_SCRIPT)) {
-          #  Write-Error "Deployment script not found at: $env:DEPLOY_SCRIPT"
-          #  exit 1
-          #}
+          Write-Output "Deploying $jarFile to WebLogic..."
           
-          Write-Output "Starting deployment to WebLogic..."
-          
-          # Verify Python installation
-          python --version
-          
-          # Execute the deployment script
-          
-            #python "$env:DEPLOY_SCRIPT" `
-            C:\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.cmd E:\Raki\NZ\Github\runnersetup\DeployEnv\weblogicdeploy.py `
+          # Execute WLST deployment script
+          & "$env:WL_HOME\common\bin\wlst.cmd" "E:\Raki\NZ\Github\runnersetup\DeployEnv\weblogicdeploy.py" `
             --username "$env:WEBLOGIC_USERNAME" `
             --password "$env:WEBLOGIC_PASSWORD" `
             --admin_url "$env:WEBLOGIC_ADMIN_URL" `
             --target_server "$env:WEBLOGIC_TARGET_SERVER" `
-            --jar_path "$env:JAR_PATH"
-          
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "Deployment failed with exit code $LASTEXITCODE"
-              exit $LASTEXITCODE
-          }
+            --jar_path "$jarFile"
+
+          if ($LASTEXITC
