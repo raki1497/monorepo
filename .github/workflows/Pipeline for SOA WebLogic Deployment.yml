@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - './soa/**'
+      - 'soa/**'
   pull_request:
     branches: [main]
     paths:
-      - './soa/**'
+      - 'soa/**'
 
 jobs:
   discover-projects:
