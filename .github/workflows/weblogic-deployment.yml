@@ -15,7 +15,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        project: ['helloword', 'oracle-soa-project']  # Define your projects here
+        project: ['helloword']  # Define your projects here
    
     steps:
       - name: Checkout code
