@@ -68,19 +68,18 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v3
 
-          - name: SonarQube Analysis - ${{ matrix.app }}
-            env:
-              SONAR_HOST_URL: http://34.93.93.9:9000
-              SONAR_TOKEN: sqa_05dff30184c6e2f5bf6d0bc2d56bfb30d9d9fe4e
-            run: |
-              cd SOA/${{ matrix.app }}
-              source ~/.bashrc
-              sonar-scanner \
-                -Dsonar.projectKey=${{ matrix.app }} \
-                -Dsonar.host.url=$SONAR_HOST_URL \
-                -Dsonar.token=$SONAR_TOKEN \
-                -Dsonar.sources=. \
-                -Dsonar.java.binaries=target/classes
+      - name: SonarQube Analysis
+        env:
+          SONAR_HOST_URL: http://34.93.93.9:9000
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Recommended to use secrets
+        run: |
+          cd soa/${{ matrix.project }}
+          sonar-scanner \
+            -Dsonar.projectKey=${{ matrix.project }} \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.sources=. \
+            -Dsonar.java.binaries=target/classes
         
         
       - name: Setup WebLogic environment
