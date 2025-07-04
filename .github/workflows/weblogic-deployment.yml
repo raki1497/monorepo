@@ -65,7 +65,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Recommended to use secrets
         run: |
           cd soa/${{ matrix.project }}
-          sonar-scanner \
+          /opt/sonar-scanner/bin/sonar-scanner \
             -Dsonar.projectKey=${{ matrix.project }} \
             -Dsonar.host.url=$SONAR_HOST_URL \
             -Dsonar.token=$SONAR_TOKEN \
