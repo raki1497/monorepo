@@ -61,7 +61,7 @@ jobs:
 
       - name: SonarQube Analysis
         env:
-          SONAR_HOST_URL: http://34.93.93.9:9000
+          SONAR_HOST_URL: http://10.145.14.111:9000
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Recommended to use secrets
         run: |
           cd soa/${{ matrix.project }}
