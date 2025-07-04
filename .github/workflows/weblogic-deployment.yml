@@ -62,9 +62,13 @@ jobs:
       - name: SonarQube Analysis
         env:
           SONAR_HOST_URL: http://10.145.14.111:9000
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Recommended to use secrets
+          SONAR_TOKEN: sqa_8ace097d689d1a73d024942b7506660871762b67  # Recommended to use secrets
         run: |
-          cd soa/${{ matrix.project }}
+          echo "=== DEBUG START ==="
+          echo "Java version: $(java -version 2>&1)"
+          echo "Scanner exists: $(ls -la /opt/sonar-scanner/bin/sonar-scanner)"
+          echo "Scanner version: $(/opt/sonar-scanner/bin/sonar-scanner -v)"
+          echo "=== DEBUG END ==="cd soa/${{ matrix.project }}
           /opt/sonar-scanner/bin/sonar-scanner \
             -Dsonar.projectKey=${{ matrix.project }} \
             -Dsonar.host.url=$SONAR_HOST_URL \
