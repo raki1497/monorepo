@@ -57,16 +57,7 @@ jobs:
         
         
       
-      - name: Sonar analysis
-        sonar-analysis:
-        needs: build
-        runs-on: [self-hosted, linux]
-        strategy:
-          matrix:
-            app: ${{ fromJson(needs.detect-changes.outputs.apps) }}
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v3
+    
 
       - name: SonarQube Analysis
         env:
