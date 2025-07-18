@@ -1,0 +1,69 @@
+# GitHub Actions Workflow (.github/workflows/mft-deploy.yml)
+name: Dynamic MFT Deployment
+
+on:
+  push:
+    paths:
+      - 'mft/**'
+
+jobs:
+  discover-projects:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.find-projects.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find all modified MFT projects
+        id: find-projects
+        run: |
+          # Get all unique project folders under mft/
+          projects=$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sed 's|mft/||' | tr '\n' ' ')
+          echo "projects=$projects" >> $GITHUB_OUTPUT
+          echo "Discovered projects: $projects"
+
+  deploy:
+    needs: discover-projects
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: ${{ fromJson(needs.discover-projects.outputs.projects) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Deploy project
+        env:
+          WLST_USER: ${{ secrets.WLST_USER }}
+          WLST_PASSWORD: ${{ secrets.WLST_PASSWORD }}
+          MFT_SERVER: ${{ secrets.MFT_SERVER }}
+          ENV: ${{ secrets.ENV || 'Prod' }}
+        run: |
+          PROJECT_DIR="mft/${{ matrix.project }}"
+          
+          # Find the first matching ZIP file to extract version
+          ZIP_FILE=$(ls $PROJECT_DIR/mft_*_v*.zip | head -1)
+          VERSION=$(echo "$ZIP_FILE" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'v' -f2)
+          
+          # Find config file (prefers ENV-specific config if exists)
+          CONFIG_FILE="$PROJECT_DIR/mft_${matrix.project}_${ENV}_config.xml"
+          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls $PROJECT_DIR/mft_*_config.xml | head -1)
+          
+          ARTIFACTS_FILE="$PROJECT_DIR/mft_${matrix.project}_artifacts.artefac"
+
+          echo "Detected:"
+          echo "Project: ${{ matrix.project }}"
+          echo "Version: $VERSION"
+          echo "Config: $(basename $CONFIG_FILE)"
+          echo "Artifacts: $(basename $ARTIFACTS_FILE)"
+
+          python3 mft/deploy_mft.py \
+            "$WLST_USER" \
+            "$WLST_PASSWORD" \
+            "$MFT_SERVER" \
+            "${{ matrix.project }}" \
+            "$VERSION" \
+            "$ARTIFACTS_FILE" \
+            "$ZIP_FILE" \
+            "$CONFIG_FILE"
