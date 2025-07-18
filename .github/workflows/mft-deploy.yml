@@ -35,10 +35,10 @@ jobs:
           python-version: '3.9'
       - name: Deploy project
         env:
-          WLST_USER: ${{ secrets.WLST_USER }}
-          WLST_PASSWORD: ${{ secrets.WLST_PASSWORD }}
-          MFT_SERVER: ${{ secrets.MFT_SERVER }}
-          ENV: ${{ secrets.ENV || 'Prod' }}
+          WLST_USER: 'weblogic'
+          WLST_PASSWORD: 'weblogic1'
+          MFT_SERVER: 'http://10.0.0.216:7003'
+          ENV: 'Prod'
         run: |
           PROJECT_DIR="mft/${{ matrix.project }}"
           
