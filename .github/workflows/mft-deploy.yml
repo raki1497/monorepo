@@ -8,7 +8,7 @@ on:
 
 jobs:
   discover-projects:
-    runs-on: self hosted
+    runs-on: self-hosted
     outputs:
       projects: ${{ steps.find-projects.outputs.projects }}
     steps:
