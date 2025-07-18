@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MftConfigPlan xmlns="http://xmlns.oracle.com/mft/configPlan/v1">
+	<global>
+	<!--Add global search and replace rules. Example :
+	<searchReplace>
+		<search>http://my-test-server</search>
+		<replace>http://my-server</replace>
+	</searchReplace>-->
+	</global>
+	<!--Add source level search and replace rules. Example :
+	<sourcePattern namePattern="*">
+		<searchReplace>
+			<search>http://my-test-server</search>
+			<replace>http://my-server</replace>
+		</searchReplace>
+	</sourcePattern>-->
+	<!--Add target level search and replace rules. Example :
+	<targetPattern namePattern="*">
+		<searchReplace>
+			<search>http://my-test-server</search>
+			<replace>http://my-server</replace>
+		</searchReplace>
+	</targetPattern>-->
+	<!--add search and replace rules for the artifact properties-->
+	<sources>
+		<source name="Source">
+			<binding technologyBinding="File">
+				<attribute name="Content Folder">
+					<replace>/tmp/b/in</replace>
+				</attribute>
+				<attribute name="Event Enabled">
+					<replace>false</replace>
+				</attribute>
+				<attribute name="Polling Enabled">
+					<replace>true</replace>
+				</attribute>
+				<attribute name="Include Content in subfolder">
+					<replace>false</replace>
+				</attribute>
+				<attribute name="Minimum Age">
+					<replace>0</replace>
+				</attribute>
+				<attribute name="Polling Interval">
+					<replace>60</replace>
+				</attribute>
+				<attribute name="Event Security Enabled">
+					<replace>false</replace>
+				</attribute>
+			</binding>
+		</source>
+	</sources>
+	<targets>
+		<target name="Target">
+			<binding technologyBinding="File">
+				<attribute name="Content Folder">
+					<replace>/tmp/b/out</replace>
+				</attribute>
+				<attribute name="Append">
+					<replace>false</replace>
+				</attribute>
+			</binding>
+		</target>
+	</targets>
+	<transfers>
+	</transfers>
+	<include>
+		<transferName>Transfer</transferName>
+	</include>
+</MftConfigPlan>
