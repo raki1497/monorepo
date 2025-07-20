@@ -9,34 +9,40 @@ jobs:
   discover-projects:
     runs-on: self-hosted
     outputs:
-      projects-json: ${{ steps.find-projects.outputs.projects-json }}
+      projects-json: ${{ steps.format-projects.outputs.projects-json }}
       has-projects: ${{ steps.check-projects.outputs.has-projects }}
     steps:
       - uses: actions/checkout@v4
       
-      - name: Find MFT projects
+      - name: Find project directories
         id: find-projects
         run: |
-          # Find projects and output as JSON array
-          projects=$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sed 's|mft/||')
-          projects_json=$(echo "$projects" | jq -R -s 'split("\n") | map(select(. != ""))')
-          echo "projects-json=$projects_json" >> $GITHUB_OUTPUT
-          echo "Found projects: $projects_json"
-          
-          # List files for debugging
-          for project in $(echo "$projects"); do
-            echo "Files in $project:"
-            find "mft/$project" -type f || echo "No files found"
-          done
+          # Find projects and store in a file
+          find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" -printf '%f\n' > projects.txt
+          echo "Raw projects found:"
+          cat projects.txt
+      
+      - name: Format as proper JSON array
+        id: format-projects
+        run: |
+          # Convert to proper JSON array format
+          if [ -s projects.txt ]; then
+            # Use jq to create compact JSON array without extra spaces
+            projects_json=$(jq -R -s -c 'split("\n") | map(select(. != ""))' projects.txt)
+          else
+            projects_json='[]'
+          fi
+          # Properly escape the JSON output
+          echo "projects-json=${projects_json}" >> $GITHUB_OUTPUT
+          echo "Formatted JSON: ${projects_json}"
       
       - name: Check if projects exist
         id: check-projects
         run: |
-          if [ -z "$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*")" ]; then
-            echo "has-projects=false" >> $GITHUB_OUTPUT
-            echo "No projects found in mft/"
-          else
+          if [ -s projects.txt ]; then
             echo "has-projects=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-projects=false" >> $GITHUB_OUTPUT
           fi
 
   deploy:
