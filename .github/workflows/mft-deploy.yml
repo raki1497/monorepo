@@ -10,20 +10,29 @@ jobs:
   discover-projects:
     runs-on: self-hosted
     outputs:
-      projects: ${{ steps.find-projects.outputs.projects }}
+      projects-json: ${{ steps.find-projects.outputs.projects-json }}
     steps:
       - uses: actions/checkout@v4
       - name: Find all modified MFT projects
         id: find-projects
         run: |
-          # Get all unique project folders under mft/
-          projects=$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sed 's|mft/||' | tr '\n' ' ')
-          echo "projects=$projects" >> $GITHUB_OUTPUT
+          # Get projects as properly formatted JSON array
+          projects=$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sed 's|mft/||')
+          
+          # Handle empty case and convert to JSON
+          if [ -z "$projects" ]; then
+            projects_json='[]'
+          else
+            projects_json=$(echo "$projects" | jq -R -s 'split("\n") | map(select(. != ""))')
+          fi
+          
+          echo "projects-json=$projects_json" >> $GITHUB_OUTPUT
+          echo "Discovered projects: $projects_json"
 
-          # Loop through each project and list its files
-          for project in $projects; do
-          echo "Files in $project:"
-          find "mft/$project" -type f
+          # Debug: List files in each project
+          for project in $(echo "$projects"); do
+            echo "Files in $project:"
+            find "mft/$project" -type f || echo "No files found"
           done
 
   deploy:
@@ -31,13 +40,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: ${{ fromJson(needs.discover-projects.outputs.projects) }}
+        project: ${{ fromJson(needs.discover-projects.outputs.projects-json) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validate project
+        if: ${{ matrix.project == '' }}
+        run: |
+          echo "Error: Empty project name detected"
+          exit 1
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+      
       - name: Deploy project
         env:
           WLST_USER: 'weblogic'
@@ -47,21 +63,34 @@ jobs:
         run: |
           PROJECT_DIR="mft/${{ matrix.project }}"
           
-          # Find the first matching ZIP file to extract version
-          ZIP_FILE=$(ls $PROJECT_DIR/mft_*_v*.zip | head -1)
+          # Find deployment package
+          ZIP_FILE=$(ls $PROJECT_DIR/mft_*_v*.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "Error: No ZIP file found in $PROJECT_DIR"
+            exit 1
+          fi
           VERSION=$(echo "$ZIP_FILE" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'v' -f2)
           
-          # Find config file (prefers ENV-specific config if exists)
+          # Find config file (prefers ENV-specific config)
           CONFIG_FILE="$PROJECT_DIR/mft_${matrix.project}_${ENV}_config.xml"
-          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls $PROJECT_DIR/mft_*_config.xml | head -1)
+          if [ ! -f "$CONFIG_FILE" ]; then
+            CONFIG_FILE=$(ls $PROJECT_DIR/mft_*_config.xml 2>/dev/null | head -1)
+          fi
           
           ARTIFACTS_FILE="$PROJECT_DIR/mft_${matrix.project}_artifacts.artefac"
 
-          echo "Detected:"
+          echo "=== Deployment Details ==="
           echo "Project: ${{ matrix.project }}"
           echo "Version: $VERSION"
-          echo "Config: $(basename $CONFIG_FILE)"
-          echo "Artifacts: $(basename $ARTIFACTS_FILE)"
+          echo "Config: $(basename ${CONFIG_FILE:-Not found})"
+          echo "Artifacts: $(basename ${ARTIFACTS_FILE:-Not found})"
+          echo "========================="
+
+          # Validate required files
+          if [ ! -f "$ARTIFACTS_FILE" ]; then
+            echo "Error: Missing artifacts file"
+            exit 1
+          fi
 
           python3 mft/deploy_mft.py \
             "$WLST_USER" \
@@ -71,4 +100,4 @@ jobs:
             "$VERSION" \
             "$ARTIFACTS_FILE" \
             "$ZIP_FILE" \
-            "$CONFIG_FILE"
+            "${CONFIG_FILE:-none}"
