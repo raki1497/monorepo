@@ -20,7 +20,7 @@
 			<search>http://my-test-server</search>
 			<replace>http://my-server</replace>
 		</searchReplace>
-	</targetPattern>-->    
+	</targetPattern>-->   
 	<!--add search and replace rules for the artifact properties-->
 	<sources>
 		<source name="Source">
