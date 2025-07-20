@@ -19,7 +19,12 @@ jobs:
           # Get all unique project folders under mft/
           projects=$(find mft -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sed 's|mft/||' | tr '\n' ' ')
           echo "projects=$projects" >> $GITHUB_OUTPUT
-          echo "Discovered projects: $projects"
+
+          # Loop through each project and list its files
+          for project in $projects; do
+          echo "Files in $project:"
+          find "mft/$project" -type f
+          done
 
   deploy:
     needs: discover-projects
