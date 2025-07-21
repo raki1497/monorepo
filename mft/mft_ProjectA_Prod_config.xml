@@ -10,7 +10,7 @@
 	<!--Add source level search and replace rules. Example :
 	<sourcePattern namePattern="*">
 		<searchReplace>
-			<search>http://my-test-server</search>
+			<search>http://my-test-server</search> 
 			<replace>http://my-server</replace>
 		</searchReplace>
 	</sourcePattern>-->
