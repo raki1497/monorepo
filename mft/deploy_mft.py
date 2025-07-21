@@ -5,7 +5,7 @@ import subprocess
 
 def run_wlst_script(wlst_script, *args):
     wlst_cmd = [
-        f"/home/raki/Oracle/Middleware/Oracle_Home/oracle_common/common/bin/wlst.sh",
+        f"/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh",
         wlst_script
     ] + list(args)
     
