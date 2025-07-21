@@ -65,6 +65,26 @@ jobs:
         with:
           python-version: '3.9'
       
+      
+      - name: Debug directory structure
+        run: |
+          echo "=== Current Environment ==="
+          echo "Working directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+        
+          echo "=== Parent Directory ==="
+          echo "Contents of $(dirname $(pwd)):"
+          ls -la ..
+        
+          echo "=== mft/ Directory ==="
+          if [ -d "mft" ]; then
+            echo "Contents of mft/:"
+            ls -la mft/
+          else
+            echo "mft/ directory not found!"
+          fi
+      
       - name: Deploy project
         env:
           WLST_USER: 'weblogic'
