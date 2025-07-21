@@ -17,7 +17,7 @@
 	<!--Add target level search and replace rules. Example :
 	<targetPattern namePattern="*">
 		<searchReplace>
-			<search>http://my-test-server</search>      
+			<search>http://my-test-server</search>       
 			<replace>http://my-server</replace>
 		</searchReplace>
 	</targetPattern>-->    
