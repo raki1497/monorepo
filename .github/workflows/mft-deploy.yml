@@ -91,41 +91,49 @@ jobs:
           WLST_PASSWORD: 'weblogic1'
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
+          ORACLE_HOME: '/home/raki/Oracle/Middleware/Oracle_Home'  # Explicitly set ORACLE_HOME
         run: |
-          # Set local variables for cleaner syntax and proper expansion
-          PROJECT_NAME="${{ matrix.project }}"
-          PROJECT_DIR="mft/${PROJECT_NAME}"
-          DEPLOY_ENV="${ENV}"
+          # Set verified WLST path
+          WLST_PATH="$ORACLE_HOME/wlserver/common/bin/wlst.sh"
           
-          
-          
-          # Verify WLST path exists
-          WLST_PATH="/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
+          # Verify WLST exists (with debug output)
+          echo "Checking WLST at: $WLST_PATH"
           if [ ! -f "$WLST_PATH" ]; then
-            echo "Error: WLST not found at $WLST_PATH"
+            echo "::error::WLST verification failed"
+            echo "::group::Directory Contents"
+            ls -la "$ORACLE_HOME/wlserver/common/bin/"
+            echo "Current user: $(whoami)"
+            echo "Environment:"
+            env | sort
+            echo "::endgroup::"
             exit 1
           fi
           
-          # Find deployment package
-          ZIP_FILE=$(ls "${PROJECT_DIR}"/mft_*_v*.zip 2>/dev/null | head -1)
-          [ -z "$ZIP_FILE" ] && { echo "Error: No ZIP file found"; exit 1; }
+          # Set project variables
+          PROJECT_NAME="${{ matrix.project }}"
+          PROJECT_DIR="mft/${PROJECT_NAME}"
+          
+          # Find deployment files (with verification)
+          echo "Locating deployment files in $PROJECT_DIR"
+          ZIP_FILE=$(ls "$PROJECT_DIR"/mft_*_v*.zip 2>/dev/null | head -1)
+          [ -z "$ZIP_FILE" ] && { echo "::error::No ZIP file found in $PROJECT_DIR"; ls -la "$PROJECT_DIR"; exit 1; }
+          
           VERSION=$(echo "$ZIP_FILE" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'v' -f2)
-          
-          # Find config file with proper environment variable handling
-          CONFIG_FILE="${PROJECT_DIR}/mft_${PROJECT_NAME}_${DEPLOY_ENV}_config.xml"
-          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls "${PROJECT_DIR}"/mft_*_config.xml 2>/dev/null | head -1)
-          
-          ARTIFACTS_FILE="${PROJECT_DIR}/mft_${PROJECT_NAME}_artifacts.artefac"
-          [ -f "$ARTIFACTS_FILE" ] || { echo "Error: Missing artifacts file"; exit 1; }
+          CONFIG_FILE="$PROJECT_DIR/mft_${PROJECT_NAME}_${ENV}_config.xml"
+          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls "$PROJECT_DIR"/mft_*_config.xml 2>/dev/null | head -1)
+          ARTIFACTS_FILE="$PROJECT_DIR/mft_${PROJECT_NAME}_artifacts.artefac"
+          [ -f "$ARTIFACTS_FILE" ] || { echo "::error::Missing artifacts file"; ls -la "$PROJECT_DIR"; exit 1; }
 
-          echo "=== Deployment Details ==="
-          echo "Project: ${PROJECT_NAME}"
-          echo "Version: ${VERSION}"
-          echo "Environment: ${DEPLOY_ENV}"
-          echo "Config: $(basename "${CONFIG_FILE:-None}")"
-          echo "Artifacts: $(basename "${ARTIFACTS_FILE}")"
+          echo "=== Verified Deployment Details ==="
+          echo "WLST Path: $WLST_PATH"
+          echo "Project: $PROJECT_NAME"
+          echo "Version: $VERSION"
+          echo "Config: $(basename "$CONFIG_FILE")"
+          echo "Artifacts: $(basename "$ARTIFACTS_FILE")"
           
-          python3 mft/deploy_mft.py \
+          # Execute deployment with debug output
+          echo "Starting WLST deployment..."
+          $WLST_PATH mft/deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
             "$MFT_SERVER" \
