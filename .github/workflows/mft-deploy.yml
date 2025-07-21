@@ -77,6 +77,15 @@ jobs:
           PROJECT_DIR="mft/${PROJECT_NAME}"
           DEPLOY_ENV="${ENV}"
           
+          
+          
+          # Verify WLST path exists
+          WLST_PATH="/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
+          if [ ! -f "$WLST_PATH" ]; then
+            echo "Error: WLST not found at $WLST_PATH"
+            exit 1
+          fi
+          
           # Find deployment package
           ZIP_FILE=$(ls "${PROJECT_DIR}"/mft_*_v*.zip 2>/dev/null | head -1)
           [ -z "$ZIP_FILE" ] && { echo "Error: No ZIP file found"; exit 1; }
