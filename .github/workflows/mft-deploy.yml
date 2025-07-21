@@ -94,7 +94,6 @@ jobs:
           ORACLE_HOME: '\\home\\raki\\Oracle\\Middleware\\Oracle_Home'  # Explicitly set ORACLE_HOME
           WLST_PATH: '\\home\\raki\\Oracle\\Middleware\\Oracle_Home\\wlserver\\common\\bin\\wlst.sh'
         run: |
-              
           # Set project variables
           PROJECT_NAME="${{ matrix.project }}"
           PROJECT_DIR="mft/${PROJECT_NAME}"
