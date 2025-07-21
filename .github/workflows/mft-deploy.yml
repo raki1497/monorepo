@@ -69,7 +69,7 @@ jobs:
       - name: Debug directory structure
         run: |
           echo "=== Current Environment ==="
-          echo "Working directory: /home/raki/Oracle"
+          echo "Working directory: \home\raki\Oracle"
           echo "Directory contents:"
           ls -la
         
@@ -91,25 +91,25 @@ jobs:
           WLST_PASSWORD: 'weblogic1'
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
-          ORACLE_HOME: '/home/raki/Oracle/Middleware/Oracle_Home'  # Explicitly set ORACLE_HOME
-          WLST_PATH: "/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
+          ORACLE_HOME: '\home\raki\Oracle\Middleware\Oracle_Home'  # Explicitly set ORACLE_HOME
+          WLST_PATH: "\home\raki\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.sh"
         run: |
           # Verify direct host path access
           if [ ! -f "$WLST_PATH" ]; then
             echo "::error::Cannot access WLST at host path"
             echo "Host paths available:"
-            ls -la /home/raki || true
+            ls -la \home\raki || true
             exit 1
           fi
           # Set verified WLST path
-          WLST_PATH="$ORACLE_HOME/wlserver/common/bin/wlst.sh"
+          WLST_PATH="$ORACLE_HOME\wlserver\common\bin\wlst.sh"
           
           # Verify WLST exists (with debug output)
           echo "Checking WLST at: $WLST_PATH"
           if [ ! -f "$WLST_PATH" ]; then
             echo "::error::WLST verification failed"
             echo "::group::Directory Contents"
-            ls -la "$ORACLE_HOME/wlserver/common/bin/"
+            ls -la "$ORACLE_HOME\wlserver\common\bin\"
             echo "Current user: $(whoami)"
             echo "Environment:"
             env | sort
