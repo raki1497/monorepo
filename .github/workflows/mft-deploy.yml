@@ -48,7 +48,7 @@ jobs:
   deploy:
     needs: discover-projects
     if: needs.discover-projects.outputs.has-projects == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # Changed to self-hosted to access host paths
     strategy:
       matrix:
         project: ${{ fromJson(needs.discover-projects.outputs.projects-json) }}
@@ -65,24 +65,32 @@ jobs:
         with:
           python-version: '3.9'
       
-      
-      - name: Debug directory structure
+      - name: Debug environment
         run: |
-          echo "=== Current Environment ==="
-          echo "Working directory: /home/raki/Oracle"
-          echo "Directory contents:"
-          ls -la
-        
-          echo "=== Parent Directory ==="
-          echo "Contents of $(dirname $(pwd)):"
-          ls -la ..
-        
-          echo "=== mft/ Directory ==="
-          if [ -d "mft" ]; then
-            echo "Contents of mft/:"
-            ls -la mft/
+          echo "=== Host Path Verification ==="
+          echo "Checking /home/raki/Oracle existence:"
+          if [ -d "/home/raki/Oracle" ]; then
+            echo "Oracle Home found at /home/raki/Oracle"
+            echo "Contents:"
+            ls -la /home/raki/Oracle
           else
-            echo "mft/ directory not found!"
+            echo "ERROR: /home/raki/Oracle not found"
+            echo "Current directory: $(pwd)"
+            echo "Directory contents:"
+            ls -la
+            echo "Mount points:"
+            mount || true
+          fi
+          
+          echo "=== WLST Path Check ==="
+          WLST_PATH="/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
+          if [ -f "$WLST_PATH" ]; then
+            echo "WLST found at $WLST_PATH"
+            ls -la "$WLST_PATH"
+          else
+            echo "ERROR: WLST not found at $WLST_PATH"
+            echo "Searching for WLST..."
+            find /home/raki -name "wlst.sh" 2>/dev/null || echo "WLST not found"
           fi
       
       - name: Deploy project
@@ -92,26 +100,38 @@ jobs:
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
         run: |
-          # Set local variables for cleaner syntax and proper expansion
+          # Set local variables
           PROJECT_NAME="${{ matrix.project }}"
           PROJECT_DIR="mft/${PROJECT_NAME}"
           DEPLOY_ENV="${ENV}"
           
+          # Find WLST (multiple possible locations)
+          WLST_PATHS=(
+            "/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
+            "${ORACLE_HOME}/wlserver/common/bin/wlst.sh"
+            "/u01/app/oracle/middleware/wlserver/common/bin/wlst.sh"
+          )
           
+          for path in "${WLST_PATHS[@]}"; do
+            if [ -f "$path" ]; then
+              WLST_PATH="$path"
+              break
+            fi
+          done
           
-          # Verify WLST path exists
-          WLST_PATH="/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
-          if [ ! -f "$WLST_PATH" ]; then
-            echo "Error: WLST not found at $WLST_PATH"
+          if [ -z "$WLST_PATH" ]; then
+            echo "::error::Could not locate wlst.sh"
+            echo "Searched in: ${WLST_PATHS[*]}"
             exit 1
           fi
           
-          # Find deployment package
+          echo "Using WLST at: $WLST_PATH"
+          
+          # Find deployment files
           ZIP_FILE=$(ls "${PROJECT_DIR}"/mft_*_v*.zip 2>/dev/null | head -1)
           [ -z "$ZIP_FILE" ] && { echo "Error: No ZIP file found"; exit 1; }
           VERSION=$(echo "$ZIP_FILE" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'v' -f2)
           
-          # Find config file with proper environment variable handling
           CONFIG_FILE="${PROJECT_DIR}/mft_${PROJECT_NAME}_${DEPLOY_ENV}_config.xml"
           [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls "${PROJECT_DIR}"/mft_*_config.xml 2>/dev/null | head -1)
           
@@ -125,7 +145,8 @@ jobs:
           echo "Config: $(basename "${CONFIG_FILE:-None}")"
           echo "Artifacts: $(basename "${ARTIFACTS_FILE}")"
           
-          python3 mft/deploy_mft.py \
+          # Execute deployment using WLST
+          $WLST_PATH mft/deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
             "$MFT_SERVER" \
