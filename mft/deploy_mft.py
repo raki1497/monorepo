@@ -1,58 +1,25 @@
-# Python Script (mft/deploy_mft.py)
+# Modified deploy_mft.py (works with standard Python)
 import sys
 import os
-from java.lang import System
+import subprocess
 
-def validate_inputs(args):
-    required_files = {
-        'artifacts': args['artifacts_file'],
-        'export': args['export_zip'],
-        'config': args['config_xml']
-    }
-    for name, path in required_files.items():
-        if not os.path.exists(path):
-            print(f"❌ Missing {name} file: {path}")
-            sys.exit(1)
-
-def process_artifacts(file_path, project):
-    deployed = {'SOURCE': 0, 'TARGET': 0, 'TRANSFER': 0}
+def run_wlst_script(wlst_script, *args):
+    wlst_cmd = [
+        f"{os.environ.get('WL_HOME', '')}/oracle_common/common/bin/wlst.sh",
+        wlst_script
+    ] + list(args)
     
-    with open(file_path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-
-            parts = line.split(':', 1)
-            if len(parts) == 2:
-                artifact_type, artifact_name = parts[0].strip().upper(), parts[1].strip()
-                if artifact_type not in ('SOURCE', 'TARGET', 'TRANSFER'):
-                    print(f"⚠️ Unknown artifact type '{artifact_type}', defaulting to TRANSFER")
-                    artifact_type = 'TRANSFER'
-            else:
-                artifact_type, artifact_name = 'TRANSFER', line
-
-            try:
-                # MFT Deployment
-                print(f"\n🌐 Connecting to MFT server {args['url']}")
-                connect(args['username'], args['password'], args['url'])  
-
-                # Import Config
-                print(f"\n📦 Importing configuration from {args['export_zip']}")
-                importMftMetadata(args['export_zip'], args['config_xml'])
-
-                bulkDeployArtifact(artifact_type, artifact_name, f'{project} deployment')
-                deployed[artifact_type] += 1
-                print(f"✓ Deployed {artifact_type}:{artifact_name}")
-            except:
-                print(f"✗ Failed to deploy {artifact_type}:{artifact_name}")
-                dumpStack()
-
-    print("\n📊 Deployment Summary:")
-    for k, v in deployed.items():
-        print(f"{k}: {v}")
+    result = subprocess.run(wlst_cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"WLST Error: {result.stderr}")
+        sys.exit(1)
+    return result.stdout
 
 def main():
+    if len(sys.argv) != 9:
+        print("Usage: python deploy_mft.py <user> <pass> <url> <project> <version> <artifacts> <export> <config>")
+        sys.exit(1)
+    
     args = {
         'username': sys.argv[1],
         'password': sys.argv[2],
@@ -63,17 +30,43 @@ def main():
         'export_zip': sys.argv[7],
         'config_xml': sys.argv[8]
     }
+    
+    # Validate files exist
+    for f in [args['artifacts_file'], args['export_zip']]:
+        if not os.path.exists(f):
+            print(f"Error: File not found - {f}")
+            sys.exit(1)
+    
+    print(f"\n🚀 Starting MFT Deployment for {args['project']} v{args['version']}")
+    
+    # Generate temporary WLST script
+    with open('temp_deploy.py', 'w') as f:
+        f.write(f"""
+from java.lang import System
+from oracle.mft.wlst import importMftMetadata, bulkDeployArtifact
 
-    try:
-        print(f"\n🚀 Starting MFT Deployment for {args['project']} v{args['version']}")
-        validate_inputs(args)
-        process_artifacts(args['artifacts_file'], args['project'])
-        print(f"\n✅ Successfully deployed {args['project']} v{args['version']}")
-        disconnect()
-    except:
-        print(f"\n❌ Critical failure deploying {args['project']}")
-        dumpStack()
-        sys.exit(1)
+print("\\n🌐 Connecting to MFT server {args['url']}")
+connect('{args['username']}', '{args['password']}', '{args['url']}')
 
+print("\\n📦 Importing configuration from {args['export_zip']}")
+importMftMetadata('{args['export_zip']}', '{args['config_xml'] if args['config_xml'] != 'none' else ''}')
+
+with open('{args['artifacts_file']}') as artifacts:
+    for line in artifacts:
+        line = line.strip()
+        if line and not line.startswith("#"):
+            parts = line.split(':', 1)
+            artifact_type = parts[0].strip().upper() if len(parts) > 1 else 'TRANSFER'
+            artifact_name = parts[1].strip() if len(parts) > 1 else line
+            bulkDeployArtifact(artifact_type, artifact_name, '{args['project']} deployment')
+            print(f"✓ Deployed {{artifact_type}}:{{artifact_name}}")
+
+disconnect()
+print("\\n✅ Deployment completed successfully")
+""")
+    
+    # Execute the WLST script
+    run_wlst_script('temp_deploy.py')
+    
 if __name__ == "__main__":
     main()
