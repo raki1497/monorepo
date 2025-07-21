@@ -72,31 +72,35 @@ jobs:
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
         run: |
-          PROJECT_DIR="mft/${{ matrix.project }}"
+          # Set local variables for cleaner syntax and proper expansion
+          PROJECT_NAME="${{ matrix.project }}"
+          PROJECT_DIR="mft/${PROJECT_NAME}"
+          DEPLOY_ENV="${ENV}"
           
           # Find deployment package
-          ZIP_FILE=$(ls $PROJECT_DIR/mft_*_v*.zip 2>/dev/null | head -1)
+          ZIP_FILE=$(ls "${PROJECT_DIR}"/mft_*_v*.zip 2>/dev/null | head -1)
           [ -z "$ZIP_FILE" ] && { echo "Error: No ZIP file found"; exit 1; }
           VERSION=$(echo "$ZIP_FILE" | grep -oE 'v[0-9]+\.[0-9]+' | cut -d'v' -f2)
           
-          # Find config file
-          CONFIG_FILE="$PROJECT_DIR/mft_${matrix.project}_${ENV}_config.xml"
-          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls $PROJECT_DIR/mft_*_config.xml 2>/dev/null | head -1)
+          # Find config file with proper environment variable handling
+          CONFIG_FILE="${PROJECT_DIR}/mft_${PROJECT_NAME}_${DEPLOY_ENV}_config.xml"
+          [ -f "$CONFIG_FILE" ] || CONFIG_FILE=$(ls "${PROJECT_DIR}"/mft_*_config.xml 2>/dev/null | head -1)
           
-          ARTIFACTS_FILE="$PROJECT_DIR/mft_${matrix.project}_artifacts.artefac"
+          ARTIFACTS_FILE="${PROJECT_DIR}/mft_${PROJECT_NAME}_artifacts.artefac"
           [ -f "$ARTIFACTS_FILE" ] || { echo "Error: Missing artifacts file"; exit 1; }
 
           echo "=== Deployment Details ==="
-          echo "Project: ${{ matrix.project }}"
-          echo "Version: $VERSION"
-          echo "Config: $(basename ${CONFIG_FILE:-None})"
-          echo "Artifacts: $(basename $ARTIFACTS_FILE)"
+          echo "Project: ${PROJECT_NAME}"
+          echo "Version: ${VERSION}"
+          echo "Environment: ${DEPLOY_ENV}"
+          echo "Config: $(basename "${CONFIG_FILE:-None}")"
+          echo "Artifacts: $(basename "${ARTIFACTS_FILE}")"
           
           python3 mft/deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
             "$MFT_SERVER" \
-            "${{ matrix.project }}" \
+            "$PROJECT_NAME" \
             "$VERSION" \
             "$ARTIFACTS_FILE" \
             "$ZIP_FILE" \
