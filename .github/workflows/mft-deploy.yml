@@ -92,7 +92,15 @@ jobs:
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
           ORACLE_HOME: '/home/raki/Oracle/Middleware/Oracle_Home'  # Explicitly set ORACLE_HOME
+          WLST_PATH: "/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh"
         run: |
+          # Verify direct host path access
+          if [ ! -f "$WLST_PATH" ]; then
+            echo "::error::Cannot access WLST at host path"
+            echo "Host paths available:"
+            ls -la /home/raki || true
+            exit 1
+          fi
           # Set verified WLST path
           WLST_PATH="$ORACLE_HOME/wlserver/common/bin/wlst.sh"
           
