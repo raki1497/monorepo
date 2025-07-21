@@ -69,7 +69,7 @@ jobs:
       - name: Debug directory structure
         run: |
           echo "=== Current Environment ==="
-          echo "Working directory: \home\raki\Oracle"
+          echo "Working directory: \\home\\raki\\Oracle"
           echo "Directory contents:"
           ls -la
         
@@ -91,8 +91,8 @@ jobs:
           WLST_PASSWORD: 'weblogic1'
           MFT_SERVER: 'http://10.0.0.216:7003'
           ENV: 'Prod'
-          ORACLE_HOME: '\home\raki\Oracle\Middleware\Oracle_Home'  # Explicitly set ORACLE_HOME
-          WLST_PATH: '\home\raki\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.sh'
+          ORACLE_HOME: '\\home\\raki\\Oracle\\Middleware\\Oracle_Home'  # Explicitly set ORACLE_HOME
+          WLST_PATH: '\\home\\raki\\Oracle\\Middleware\\Oracle_Home\\wlserver\\common\\bin\\wlst.sh'
         run: |
           # Verify direct host path access
           if [ ! -f "$WLST_PATH" ]; then
