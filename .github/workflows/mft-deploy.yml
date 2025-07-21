@@ -69,7 +69,7 @@ jobs:
       - name: Debug directory structure
         run: |
           echo "=== Current Environment ==="
-          echo "Working directory: /home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin"
+          echo "Working directory: /home/raki/Oracle"
           echo "Directory contents:"
           ls -la
         
