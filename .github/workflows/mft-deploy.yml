@@ -86,7 +86,7 @@ jobs:
         env:
           WLST_USER: 'weblogic'
           WLST_PASSWORD: 'weblogic1'
-          MFT_SERVER: 'http://10.0.0.216:7003'
+          MFT_SERVER: 'http://10.145.14.111/:7003'
           ENV: 'Prod'
           ORACLE_HOME: '/home/raki/Oracle/Middleware/Oracle_Home'  # Explicitly set ORACLE_HOME
           WLST_PATH: '/home/raki/Oracle/Middleware/Oracle_Home/wlserver/common/bin/wlst.sh'
@@ -117,7 +117,7 @@ jobs:
           echo "Starting WLST deployment..."
           echo "Starting  deployment..."
           echo "Start  Python Script..."
-          $WLST_PATH deploy_mft.py \
+          $WLST_PATH mft/deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
             "$MFT_SERVER" \
