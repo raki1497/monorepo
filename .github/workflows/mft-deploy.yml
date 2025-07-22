@@ -60,10 +60,7 @@ jobs:
           echo "Deploying project: ${{ matrix.project }}"
           ls -la "mft/${{ matrix.project }}"
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+      
       
       
       - name: Debug directory structure
