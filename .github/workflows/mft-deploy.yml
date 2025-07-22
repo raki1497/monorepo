@@ -48,7 +48,7 @@ jobs:
   deploy:
     needs: discover-projects
     if: needs.discover-projects.outputs.has-projects == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         project: ${{ fromJson(needs.discover-projects.outputs.projects-json) }}
