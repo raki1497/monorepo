@@ -118,6 +118,8 @@ jobs:
           
           # Execute deployment with debug output
           echo "Starting WLST deployment..."
+          echo "Starting  deployment..."
+          echo "Start  Python Script..."
           $WLST_PATH mft/deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
@@ -127,6 +129,7 @@ jobs:
             "$ARTIFACTS_FILE" \
             "$ZIP_FILE" \
             "${CONFIG_FILE:-none}"
+          echo "End  Python Script..."
 
   no-projects:
     needs: discover-projects
