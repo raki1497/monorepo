@@ -4,16 +4,7 @@ import os
 import subprocess
 
 def run_wlst_script(wlst_script, *args):
-    wlst_cmd = [
-        f"\home\raki\Oracle\Middleware\Oracle_Home\wlserver\common\bin\wlst.sh",
-        wlst_script
-    ] + list(args)
-    
-    result = subprocess.run(wlst_cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"WLST Error: {result.stderr}")
-        sys.exit(1)
-    return result.stdout
+   
 
 def main():
     if len(sys.argv) != 9:
