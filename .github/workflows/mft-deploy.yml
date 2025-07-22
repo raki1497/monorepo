@@ -120,7 +120,7 @@ jobs:
           echo "Starting WLST deployment..."
           echo "Starting  deployment..."
           echo "Start  Python Script..."
-          $WLST_PATH mft/deploy_mft.py \
+          $WLST_PATH deploy_mft.py \
             "$WLST_USER" \
             "$WLST_PASSWORD" \
             "$MFT_SERVER" \

@@ -7,7 +7,7 @@
 		<replace>http://my-server</replace>      
 	</searchReplace>--> 
 	</global>
-	<!--Add source level search and replace rules. Example : 
+	<!--Add source level search and replace rules. Example :  
 	<sourcePattern namePattern="*">
 		<searchReplace>
 			<search>http://my-test-server</search>  
