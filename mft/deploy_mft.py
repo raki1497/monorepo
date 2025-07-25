@@ -21,6 +21,18 @@ def main():
         'export_zip': sys.argv[7],
         'config_xml': sys.argv[8]
     }
+
+# Step 2: Print each value separately
+print("Command Line Arguments:")
+print("username     :", username)
+print("password     :", "********")  # Masking the password
+print("url          :", url)
+print("project      :", project)
+print("version      :", version)
+print("artifacts_file:", artifacts_file)
+print("export_zip   :", export_zip)
+print("config_xml   :", config_xml)
+
     
     # Validate files exist
     for f in [args['artifacts_file'], args['export_zip']]:
