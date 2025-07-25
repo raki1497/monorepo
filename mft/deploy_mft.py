@@ -23,15 +23,15 @@ def main():
     }
 
 # Step 2: Print each value separately
-print("Command Line Arguments:")
-print("username     :", username)
-print("password     :", "********")  # Masking the password
-print("url          :", url)
-print("project      :", project)
-print("version      :", version)
-print("artifacts_file:", artifacts_file)
-print("export_zip   :", export_zip)
-print("config_xml   :", config_xml)
+print("Command Line Arguments:", flush=True)
+print("username     :", username, flush=True)
+print("password     :", "********", flush=True)  # Masking the password
+print("url          :", url, flush=True)
+print("project      :", project, flush=True)
+print("version      :", version, flush=True)
+print("artifacts_file:", artifacts_file, flush=True)
+print("export_zip   :", export_zip, flush=True)
+print("config_xml   :", config_xml, flush=True)
 
     
     # Validate files exist
